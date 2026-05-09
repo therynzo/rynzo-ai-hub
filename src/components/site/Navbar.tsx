@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { Menu, X, LogIn, UserPlus } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Menu, X, LogIn, UserPlus, LogOut, User as UserIcon, Shield } from "lucide-react";
 import { Logo } from "./Logo";
+import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 const links = [
   { to: "/", label: "Home" },
@@ -15,6 +17,8 @@ const links = [
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { user, profile, isAdmin, signOut } = useAuth();
+  const nav = useNavigate();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -22,6 +26,15 @@ export function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const handleLogout = async () => {
+    await signOut();
+    setOpen(false);
+    toast.success("Signed out");
+    nav({ to: "/" });
+  };
+
+  const initial = (profile?.username || profile?.email || user?.email || "U").charAt(0).toUpperCase();
 
   return (
     <header
@@ -50,18 +63,45 @@ export function Navbar() {
             ))}
           </nav>
           <div className="hidden lg:flex items-center gap-2">
-            <Link
-              to="/support"
-              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm text-foreground/90 hover:text-foreground hover:bg-secondary transition-colors"
-            >
-              <LogIn className="h-4 w-4" /> Login
-            </Link>
-            <Link
-              to="/support"
-              className="group relative inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium text-primary-foreground bg-[image:var(--gradient-primary)] shadow-glow hover:shadow-glow-lg transition-all"
-            >
-              <UserPlus className="h-4 w-4" /> Register
-            </Link>
+            {user ? (
+              <>
+                {isAdmin && (
+                  <Link to="/admin" className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-primary hover:bg-secondary transition-colors">
+                    <Shield className="h-4 w-4" /> Admin
+                  </Link>
+                )}
+                <Link
+                  to="/profile"
+                  className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm hover:bg-secondary transition-colors"
+                >
+                  <span className="h-7 w-7 rounded-full bg-[image:var(--gradient-primary)] grid place-items-center text-xs font-bold text-primary-foreground">
+                    {initial}
+                  </span>
+                  <span className="max-w-[120px] truncate">{profile?.username ?? "Profile"}</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium text-primary border border-primary/40 hover:bg-primary/10 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" /> Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm text-foreground/90 hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  <LogIn className="h-4 w-4" /> Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="group relative inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium text-primary-foreground bg-[image:var(--gradient-primary)] shadow-glow hover:shadow-glow-lg transition-all"
+                >
+                  <UserPlus className="h-4 w-4" /> Register
+                </Link>
+              </>
+            )}
           </div>
           <button
             aria-label="Open menu"
@@ -87,14 +127,30 @@ export function Navbar() {
                   {l.label}
                 </Link>
               ))}
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <Link to="/support" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm text-center border border-border hover:bg-secondary">
-                  Login
-                </Link>
-                <Link to="/support" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm text-center text-primary-foreground bg-[image:var(--gradient-primary)] shadow-glow">
-                  Register
-                </Link>
-              </div>
+              {user ? (
+                <div className="mt-2 grid gap-2">
+                  <Link to="/profile" onClick={() => setOpen(false)} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm border border-border hover:bg-secondary">
+                    <UserIcon className="h-4 w-4" /> Profile
+                  </Link>
+                  {isAdmin && (
+                    <Link to="/admin" onClick={() => setOpen(false)} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm border border-border hover:bg-secondary">
+                      <Shield className="h-4 w-4" /> Admin
+                    </Link>
+                  )}
+                  <button onClick={handleLogout} className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary border border-primary/40 hover:bg-primary/10">
+                    <LogOut className="h-4 w-4" /> Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <Link to="/login" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm text-center border border-border hover:bg-secondary">
+                    Login
+                  </Link>
+                  <Link to="/register" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm text-center text-primary-foreground bg-[image:var(--gradient-primary)] shadow-glow">
+                    Register
+                  </Link>
+                </div>
+              )}
             </nav>
           </div>
         )}
