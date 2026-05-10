@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, KeyRound, Users, MessageSquare, Sparkles, Trash2, Power, Search, RefreshCw, Plus, Eye, EyeOff, Save, History } from "lucide-react";
+import { Copy, KeyRound, Users, MessageSquare, Sparkles, Trash2, Power, Search, RefreshCw, Plus, Eye, EyeOff, Save, History, Shield } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 
