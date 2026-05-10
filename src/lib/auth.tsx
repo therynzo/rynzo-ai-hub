@@ -42,12 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setLoading(true);
       setSession(sess);
       if (sess?.user) {
-        setTimeout(() => loadExtras(sess.user.id, sess.user.email ?? undefined), 0);
+        setTimeout(() => {
+          loadExtras(sess.user.id, sess.user.email ?? undefined).finally(() => setLoading(false));
+        }, 0);
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setLoading(false);
       }
     });
     supabase.auth.getSession().then(({ data: { session: s } }) => {

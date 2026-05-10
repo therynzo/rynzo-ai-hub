@@ -26,7 +26,7 @@ function LoginPage() {
     let admin = false;
     if (uid) {
       const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", uid);
-      admin = !!r?.some((x) => x.role === "admin");
+      admin = email.trim().toLowerCase() === "therynzo7@gmail.com" && !!r?.some((x) => x.role === "admin");
     }
     nav({ to: admin ? "/admin" : "/dashboard" });
   };
