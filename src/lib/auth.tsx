@@ -7,6 +7,7 @@ type Profile = {
   username: string;
   email: string;
   has_active_key: boolean;
+  banned?: boolean;
 };
 
 type AuthContextValue = {

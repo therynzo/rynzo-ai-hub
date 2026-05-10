@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, KeyRound, Users, MessageSquare, Sparkles, Trash2, Power, Search, RefreshCw, Plus, Eye, EyeOff, Save, History, Shield } from "lucide-react";
+import { Copy, KeyRound, Users, MessageSquare, Sparkles, Trash2, Power, Search, RefreshCw, Plus, Eye, EyeOff, Save, History, Shield, Ban, UserX, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Profile = { id: string; username: string; email: string; has_active_key: boolean; created_at: string };
+type Profile = { id: string; username: string; email: string; has_active_key: boolean; banned: boolean; created_at: string };
 type Key = { id: string; code: string; is_active: boolean; usage_limit: number; used_count: number; expires_at: string | null; created_at: string };
 type Settings = { default_provider: string; default_model: string; openai_enabled: boolean; gemini_enabled: boolean };
 type AdminSecret = { key: string; value: string | null };
@@ -145,6 +145,22 @@ function AdminPage() {
   const grantUserKey = async (id: string) => {
     const { error } = await supabase.from("profiles").update({ has_active_key: true }).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Granted"); load(); }
+  };
+
+  const toggleBan = async (u: Profile) => {
+    const action = u.banned ? "unban" : "ban";
+    if (!confirm(`${action} ${u.email}?`)) return;
+    const { error } = await supabase.from("profiles").update({ banned: !u.banned }).eq("id", u.id);
+    if (error) toast.error(error.message); else { toast.success(`${action}ned`); load(); }
+  };
+
+  const deleteUser = async (u: Profile) => {
+    if (!confirm(`PERMANENTLY delete ${u.email}? This removes their account, chats, and keys.`)) return;
+    const { data, error } = await supabase.rpc("admin_delete_user" as any, { _user_id: u.id });
+    if (error) return toast.error(error.message);
+    const r = data as any;
+    if (r?.ok) { toast.success("User deleted"); load(); }
+    else toast.error(r?.error ?? "Failed");
   };
 
   const saveSettings = async () => {
@@ -297,12 +313,22 @@ function AdminPage() {
                   <tr key={u.id} className="border-t border-border">
                     <td className="py-2">{u.username}</td>
                     <td className="font-mono text-xs">{u.email}</td>
-                    <td>{u.has_active_key ? <span className="text-primary">Active</span> : <span className="text-muted-foreground">Inactive</span>}</td>
+                    <td>
+                      {u.banned ? <span className="text-destructive">Banned</span>
+                        : u.has_active_key ? <span className="text-primary">Active</span>
+                        : <span className="text-muted-foreground">Inactive</span>}
+                    </td>
                     <td className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
                     <td className="text-right whitespace-nowrap">
                       {u.has_active_key
                         ? <button onClick={() => revokeUserKey(u.id)} className="text-xs text-destructive hover:underline">Revoke</button>
                         : <button onClick={() => grantUserKey(u.id)} className="text-xs text-primary hover:underline">Grant access</button>}
+                      <button onClick={() => toggleBan(u)} className={`ml-3 inline-flex items-center gap-1 text-xs hover:underline ${u.banned ? "text-primary" : "text-destructive"}`}>
+                        {u.banned ? <><CheckCircle2 className="h-3 w-3" />Unban</> : <><Ban className="h-3 w-3" />Ban</>}
+                      </button>
+                      <button onClick={() => deleteUser(u)} className="ml-3 inline-flex items-center gap-1 text-xs text-destructive hover:underline">
+                        <UserX className="h-3 w-3" />Delete
+                      </button>
                     </td>
                   </tr>
                 ))}

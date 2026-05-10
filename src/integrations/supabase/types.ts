@@ -146,6 +146,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          banned: boolean
           created_at: string
           email: string
           has_active_key: boolean
@@ -153,6 +154,7 @@ export type Database = {
           username: string
         }
         Insert: {
+          banned?: boolean
           created_at?: string
           email: string
           has_active_key?: boolean
@@ -160,6 +162,7 @@ export type Database = {
           username: string
         }
         Update: {
+          banned?: boolean
           created_at?: string
           email?: string
           has_active_key?: boolean
@@ -227,6 +230,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user: { Args: { _user_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
