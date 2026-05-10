@@ -38,7 +38,8 @@ function AdminPage() {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { if (!loading && (!user || !isAdmin)) nav({ to: "/dashboard" }); }, [loading, user, isAdmin, nav]);
+  useEffect(() => { if (!loading && !user) nav({ to: "/login" }); }, [loading, user, nav]);
+  useEffect(() => { if (!loading && user && !isAdmin) nav({ to: "/dashboard" }); }, [loading, user, isAdmin, nav]);
 
   const load = async () => {
     const [u, k, s, c, sec, ch] = await Promise.all([
@@ -75,7 +76,34 @@ function AdminPage() {
     redemptions: keys.reduce((a, k) => a + k.used_count, 0),
   }), [users, keys]);
 
-  if (!isAdmin) return null;
+  if (loading) {
+    return (
+      <div className="pt-32 pb-16 px-4">
+        <div className="mx-auto max-w-6xl space-y-4">
+          <div className="h-10 w-64 animate-pulse rounded-xl bg-secondary/60" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map((i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-secondary/50" />)}
+          </div>
+          <div className="h-72 animate-pulse rounded-2xl bg-secondary/40" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="pt-32 pb-16 px-4">
+        <div className="mx-auto max-w-md glass glow-border rounded-2xl p-8 text-center">
+          <Shield className="mx-auto h-10 w-10 text-primary" />
+          <h1 className="mt-4 text-2xl font-semibold">Admin access only</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Only therynzo7@gmail.com can open the admin dashboard.</p>
+          <button onClick={() => nav({ to: user ? "/dashboard" : "/login" })} className="mt-5 rounded-xl bg-[image:var(--gradient-primary)] px-4 py-2 text-sm text-primary-foreground shadow-glow">
+            {user ? "Back to dashboard" : "Login as admin"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const generateKeys = async () => {
     setBusy(true);
