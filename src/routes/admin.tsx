@@ -313,7 +313,11 @@ function AdminPage() {
                   <tr key={u.id} className="border-t border-border">
                     <td className="py-2">{u.username}</td>
                     <td className="font-mono text-xs">{u.email}</td>
-                    <td>{u.has_active_key ? <span className="text-primary">Active</span> : <span className="text-muted-foreground">Inactive</span>}</td>
+                    <td>
+                      {u.banned ? <span className="text-destructive">Banned</span>
+                        : u.has_active_key ? <span className="text-primary">Active</span>
+                        : <span className="text-muted-foreground">Inactive</span>}
+                    </td>
                     <td className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
                     <td className="text-right whitespace-nowrap">
                       {u.has_active_key
