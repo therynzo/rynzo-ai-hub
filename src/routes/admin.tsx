@@ -76,7 +76,7 @@ function AdminPage() {
     redemptions: keys.reduce((a, k) => a + k.used_count, 0),
   }), [users, keys]);
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="pt-32 pb-16 px-4">
         <div className="mx-auto max-w-6xl space-y-4">
@@ -90,7 +90,7 @@ function AdminPage() {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!isAdmin) {
     return (
       <div className="pt-32 pb-16 px-4">
         <div className="mx-auto max-w-md glass glow-border rounded-2xl p-8 text-center">
