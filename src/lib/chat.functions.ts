@@ -23,11 +23,12 @@ export const sendChat = createServerFn({ method: "POST" })
     const { settings, secrets } = await getAdminAiConfig();
 
     const provider = settings?.default_provider ?? "lovable";
-    const model = settings?.default_model ?? "google/gemini-3-flash-preview";
+    const model = (settings?.default_model || "google/gemini-3-flash-preview").trim();
+    const gatewayModel = model.startsWith("google/") || model.startsWith("openai/") ? model : "google/gemini-3-flash-preview";
 
     let url = "https://ai.gateway.lovable.dev/v1/chat/completions";
     let apiKey = process.env.LOVABLE_API_KEY ?? "";
-    let usedModel = model;
+    let usedModel = gatewayModel;
 
     if (provider === "openai" && settings?.openai_enabled && secrets.OPENAI_API_KEY) {
       url = "https://api.openai.com/v1/chat/completions";
@@ -36,7 +37,7 @@ export const sendChat = createServerFn({ method: "POST" })
     } else if (provider === "gemini" && settings?.gemini_enabled && secrets.GEMINI_API_KEY) {
       url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
       apiKey = secrets.GEMINI_API_KEY;
-      usedModel = model.startsWith("gemini") ? model : model.replace(/^google\//, "");
+      usedModel = model.startsWith("gemini-") ? model : "gemini-2.0-flash";
     }
 
     if (!apiKey) throw new Response("AI not configured. Admin must set an API key.", { status: 500 });
