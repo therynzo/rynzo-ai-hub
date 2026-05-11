@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useLocation,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
@@ -117,6 +118,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+  const hideFooter = location.pathname.startsWith("/ai-chat");
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -126,7 +129,7 @@ function RootComponent() {
           <main className="flex-1">
             <Outlet />
           </main>
-          <Footer />
+          {!hideFooter && <Footer />}
         </div>
         <Toaster />
       </AuthProvider>
