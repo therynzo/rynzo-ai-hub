@@ -69,8 +69,11 @@ function ChatPage() {
     setBusy(true);
     try {
       const res: any = await callChat({ data: { chatId, messages: next } });
-      setMessages([...next, { role: "assistant", content: res.reply || "I could not generate a reply. Please try again." }]);
-      if (res.chatId) setChatId(res.chatId);
+      const reply = typeof res === "string" ? res : res?.reply;
+      const nextChatId = typeof res === "object" && res ? res.chatId : undefined;
+      if (!reply) throw new Error("AI did not reply. Check the AI setup or try again.");
+      setMessages([...next, { role: "assistant", content: reply }]);
+      if (nextChatId) setChatId(nextChatId);
       await loadChats();
     } catch (e: any) {
       const msg = getChatErrorMessage(e);
