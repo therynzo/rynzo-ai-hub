@@ -16,6 +16,15 @@ export const Route = createFileRoute("/ai-chat")({
 type Msg = { role: "user" | "assistant"; content: string };
 type ChatRow = { id: string; title: string; created_at: string };
 
+function getChatErrorMessage(error: unknown) {
+  if (error instanceof Response) return error.statusText || "AI did not reply. Try again.";
+  const message = error instanceof Error ? error.message : String(error || "AI did not reply. Try again.");
+  if (message.includes("API key") || message.includes("AI did not reply")) return message;
+  if (message.includes("No active key")) return "Activate your key first to use AI chat.";
+  if (message.includes("rate")) return "AI is busy right now. Try again shortly.";
+  return "AI did not reply. Check the AI setup or try again.";
+}
+
 function ChatPage() {
   const { user, profile } = useAuth();
   const unlocked = !!profile?.has_active_key && !(profile as any)?.banned;
@@ -35,7 +44,8 @@ function ChatPage() {
 
   const loadChats = async () => {
     if (!user) return;
-    const { data } = await supabase.from("chats").select("id,title,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50);
+    const { data, error } = await supabase.from("chats").select("id,title,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50);
+    if (error) return toast.error("Could not load chat history");
     setChats((data as ChatRow[]) ?? []);
   };
   useEffect(() => { if (user && unlocked) loadChats(); }, [user, unlocked]);
@@ -43,7 +53,8 @@ function ChatPage() {
   const openChat = async (id: string) => {
     setChatId(id);
     setOpen(false);
-    const { data } = await supabase.from("chat_messages").select("role,content").eq("chat_id", id).order("created_at", { ascending: true });
+    const { data, error } = await supabase.from("chat_messages").select("role,content").eq("chat_id", id).eq("user_id", user!.id).order("created_at", { ascending: true });
+    if (error) return toast.error("Could not open chat history");
     setMessages(((data as any) ?? []).filter((m: any) => m.role !== "system"));
   };
 
@@ -58,12 +69,13 @@ function ChatPage() {
     setBusy(true);
     try {
       const res: any = await callChat({ data: { chatId, messages: next } });
-      setMessages([...next, { role: "assistant", content: res.reply }]);
-      if (res.chatId && res.chatId !== chatId) { setChatId(res.chatId); loadChats(); }
+      setMessages([...next, { role: "assistant", content: res.reply || "I could not generate a reply. Please try again." }]);
+      if (res.chatId) setChatId(res.chatId);
+      await loadChats();
     } catch (e: any) {
-      const msg = e?.message ?? "Failed to send";
+      const msg = getChatErrorMessage(e);
       toast.error(msg);
-      setMessages(next);
+      setMessages([...next, { role: "assistant", content: msg }]);
     } finally { setBusy(false); }
   };
 
@@ -158,16 +170,16 @@ function ChatPage() {
           </div>
         </div>
 
-        <div className="border-t border-border px-4 py-3">
+        <div className="border-t border-border bg-background/95 px-4 py-3">
           <div className="mx-auto max-w-3xl">
-            <div className="flex items-end gap-2 rounded-2xl border border-border bg-input/40 p-2 focus-within:border-primary/60">
+            <div className="flex items-end gap-2 rounded-2xl border border-primary/35 bg-input/70 p-2 shadow-glow transition-all focus-within:border-primary focus-within:shadow-glow-lg">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
                 placeholder="Ask anything"
                 rows={1}
-                className="flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none max-h-40"
+                className="flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none max-h-40 placeholder:text-muted-foreground/80"
               />
               <button onClick={send} disabled={busy || !input.trim()} className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[image:var(--gradient-primary)] text-primary-foreground shadow-glow disabled:opacity-50">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
