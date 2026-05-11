@@ -21,6 +21,11 @@ function rand(n = 12) {
   return Array.from({ length: n }, () => a[Math.floor(Math.random() * a.length)]).join("");
 }
 const newCode = () => "RYNZO-" + rand(12);
+const providerModels: Record<string, string> = {
+  lovable: "google/gemini-3-flash-preview",
+  openai: "gpt-4o-mini",
+  gemini: "gemini-2.0-flash",
+};
 
 function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
@@ -165,13 +170,14 @@ function AdminPage() {
 
   const saveSettings = async () => {
     if (!settings) return;
+    const fixedModel = settings.default_model.trim() || providerModels[settings.default_provider] || providerModels.lovable;
     const { error } = await supabase.from("app_settings").update({
       default_provider: settings.default_provider,
-      default_model: settings.default_model,
+      default_model: fixedModel,
       openai_enabled: settings.openai_enabled,
       gemini_enabled: settings.gemini_enabled,
     }).eq("id", 1);
-    if (error) toast.error(error.message); else toast.success("AI settings saved");
+    if (error) toast.error(error.message); else { setSettings({ ...settings, default_model: fixedModel }); toast.success("AI settings saved"); }
   };
 
   const saveSecret = async (key: string) => {
@@ -212,7 +218,7 @@ function AdminPage() {
           {settings && (
             <div className="mt-4 grid sm:grid-cols-2 gap-3">
               <label className="text-sm">Default provider
-                <select value={settings.default_provider} onChange={(e) => setSettings({ ...settings, default_provider: e.target.value })} className="mt-1 w-full rounded-xl border border-border bg-input/40 px-3 py-2 text-sm">
+                <select value={settings.default_provider} onChange={(e) => { const default_provider = e.target.value; setSettings({ ...settings, default_provider, default_model: providerModels[default_provider] || providerModels.lovable }); }} className="mt-1 w-full rounded-xl border border-border bg-input/40 px-3 py-2 text-sm">
                   <option value="lovable">Lovable AI (built-in)</option>
                   <option value="openai">OpenAI</option>
                   <option value="gemini">Gemini</option>
