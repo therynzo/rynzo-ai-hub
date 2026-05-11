@@ -71,6 +71,9 @@ export const sendChat = createServerFn({ method: "POST" })
       const title = last.content.slice(0, 60) || "New chat";
       const { data: newChat } = await supabase.from("chats").insert({ user_id: userId, title }).select("id").single();
       chatId = (newChat as any)?.id;
+    } else {
+      const { data: ownChat } = await supabase.from("chats").select("id").eq("id", chatId).eq("user_id", userId).maybeSingle();
+      if (!ownChat) throw new Response("Chat not found", { status: 404 });
     }
     if (chatId) {
       await supabase.from("chat_messages").insert([
