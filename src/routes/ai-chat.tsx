@@ -103,9 +103,9 @@ function ChatPage() {
   }
 
   return (
-    <div className="fixed inset-0 top-16 flex bg-background">
+    <div className="flex bg-background h-[calc(100vh-4rem)]">
       {/* Sidebar */}
-      <aside className={`${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 transition-transform fixed md:static z-30 inset-y-16 md:inset-y-0 left-0 w-72 border-r border-border bg-background/95 backdrop-blur p-3 flex flex-col`}>
+      <aside className={`${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 transition-transform fixed md:static z-30 top-16 bottom-0 md:top-auto md:bottom-auto md:h-auto left-0 w-72 border-r border-border bg-background/95 backdrop-blur p-3 flex flex-col`}>
         <button onClick={newChat} className="flex items-center gap-2 rounded-xl border border-primary/40 px-3 py-2 text-sm hover:bg-primary/10">
           <Plus className="h-4 w-4 text-primary" /> New chat
         </button>
