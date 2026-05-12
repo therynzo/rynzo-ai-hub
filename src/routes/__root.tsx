@@ -80,11 +80,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "TheRynzo Ai — Transform Your Ideas Into AI Solutions" },
       { name: "description", content: "TheRynzo Ai is a futuristic AI platform for developers, creators, Minecraft owners and VPS users. Advanced AI tools, dashboards and integrations." },
       { name: "author", content: "TheRynzo" },
-      { property: "og:title", content: "TheRynzo Ai" },
-      { property: "og:description", content: "Advanced AI tools with a futuristic dark red interface." },
+      { property: "og:title", content: "TheRynzo Ai — Transform Your Ideas Into AI Solutions" },
+      { property: "og:description", content: "TheRynzo Ai is a futuristic AI platform for developers, creators, Minecraft owners and VPS users. Advanced AI tools, dashboards and integrations." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@TheRynzo" },
+      { name: "twitter:title", content: "TheRynzo Ai — Transform Your Ideas Into AI Solutions" },
+      { name: "twitter:description", content: "TheRynzo Ai is a futuristic AI platform for developers, creators, Minecraft owners and VPS users. Advanced AI tools, dashboards and integrations." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b4e040c8-21c6-4cc0-a41b-e1271a213ed4/id-preview-8b6a023a--87a6a0dc-eb43-4511-b3d9-b024677a4140.lovable.app-1778549117823.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b4e040c8-21c6-4cc0-a41b-e1271a213ed4/id-preview-8b6a023a--87a6a0dc-eb43-4511-b3d9-b024677a4140.lovable.app-1778549117823.png" },
     ],
     links: [
       {
