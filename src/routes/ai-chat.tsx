@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { KeyRound, Send, Loader2, Sparkles, Plus, MessageSquare } from "lucide-react";
+import { KeyRound, Send, Loader2, Sparkles, Plus, MessageSquare, Copy, RotateCcw, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -37,6 +37,7 @@ function ChatPage() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,11 +62,7 @@ function ChatPage() {
 
   const newChat = () => { setChatId(undefined); setMessages([]); setOpen(false); };
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || busy) return;
-    setInput("");
-    const next: Msg[] = [...messages, { role: "user", content: text }];
+  const runChat = async (next: Msg[]) => {
     setMessages(next);
     setBusy(true);
     try {
@@ -83,6 +80,26 @@ function ChatPage() {
       toast.error(msg);
       setMessages([...next, { role: "assistant", content: msg }]);
     } finally { setBusy(false); }
+  };
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || busy) return;
+    setInput("");
+    await runChat([...messages, { role: "user", content: text }]);
+  };
+
+  const retry = async (idx: number) => {
+    if (busy) return;
+    await runChat(messages.slice(0, idx));
+  };
+
+  const copyMsg = async (idx: number, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx((c) => (c === idx ? null : c)), 1500);
+    } catch { toast.error("Could not copy"); }
   };
 
   if (!user) {
@@ -158,12 +175,26 @@ function ChatPage() {
               </div>
             )}
             {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${m.role === "user" ? "bg-[image:var(--gradient-primary)] text-primary-foreground shadow-glow" : "glass glow-border"}`}>
+              <div key={i} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
+                <div className={`max-w-[85%] min-w-0 rounded-2xl px-4 py-3 text-sm overflow-hidden ${m.role === "user" ? "bg-[image:var(--gradient-primary)] text-primary-foreground shadow-glow" : "glass glow-border"}`}>
                   {m.role === "assistant"
-                    ? <div className="prose prose-sm prose-invert max-w-none"><ReactMarkdown>{m.content}</ReactMarkdown></div>
-                    : <p className="whitespace-pre-wrap">{m.content}</p>}
+                    ? (
+                      <div className="prose prose-sm prose-invert max-w-none break-words [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_pre]:whitespace-pre [&_code]:break-words [&_p]:break-words [&_a]:break-all">
+                        <ReactMarkdown>{m.content}</ReactMarkdown>
+                      </div>
+                    )
+                    : <p className="whitespace-pre-wrap break-words">{m.content}</p>}
                 </div>
+                {m.role === "assistant" && (
+                  <div className="mt-1 flex gap-1">
+                    <button onClick={() => copyMsg(i, m.content)} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary/60 hover:text-foreground">
+                      {copiedIdx === i ? (<><Check className="h-3 w-3 text-primary" /> Copied</>) : (<><Copy className="h-3 w-3" /> Copy</>)}
+                    </button>
+                    <button onClick={() => retry(i)} disabled={busy} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary/60 hover:text-foreground disabled:opacity-50">
+                      <RotateCcw className="h-3 w-3" /> Retry
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
             {busy && (
