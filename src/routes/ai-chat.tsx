@@ -19,6 +19,7 @@ type ChatRow = { id: string; title: string; created_at: string };
 function getChatErrorMessage(error: unknown) {
   if (error instanceof Response) return error.statusText || "AI did not reply. Try again.";
   const message = error instanceof Error ? error.message : String(error || "AI did not reply. Try again.");
+  if (message.includes("sign in") || message.includes("Unauthorized")) return "Please sign in again, then send your message.";
   if (message.includes("API key") || message.includes("AI did not reply")) return message;
   if (message.includes("No active key")) return "Activate your key first to use AI chat.";
   if (message.includes("rate")) return "AI is busy right now. Try again shortly.";
@@ -26,7 +27,7 @@ function getChatErrorMessage(error: unknown) {
 }
 
 function ChatPage() {
-  const { user, profile } = useAuth();
+  const { session, user, profile } = useAuth();
   const unlocked = !!profile?.has_active_key && !(profile as any)?.banned;
   const callChat = useServerFn(sendChat);
 
@@ -68,7 +69,9 @@ function ChatPage() {
     setMessages(next);
     setBusy(true);
     try {
-      const res: any = await callChat({ data: { chatId, messages: next } });
+      const accessToken = session?.access_token;
+      if (!accessToken) throw new Error("Please sign in again before chatting.");
+      const res: any = await callChat({ data: { accessToken, chatId, messages: next } });
       const reply = typeof res === "string" ? res : res?.reply;
       const nextChatId = typeof res === "object" && res ? res.chatId : undefined;
       if (!reply) throw new Error("AI did not reply. Check the AI setup or try again.");
