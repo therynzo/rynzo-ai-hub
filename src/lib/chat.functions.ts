@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getAdminAiConfig } from "./chat.server";
 
 type Msg = { role: "system" | "user" | "assistant"; content: string };
@@ -15,10 +15,16 @@ function extractReply(json: any) {
 }
 
 export const sendChat = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { chatId?: string; messages: Msg[] }) => d)
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+  .inputValidator((d: { accessToken?: string; chatId?: string; messages: Msg[] }) => d)
+  .handler(async ({ data }) => {
+    const accessToken = typeof data.accessToken === "string" ? data.accessToken.trim() : "";
+    if (!accessToken) throw new Response("Please sign in again before chatting.", { status: 401 });
+
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(accessToken);
+    const userId = authData.user?.id;
+    if (authError || !userId) throw new Response("Please sign in again before chatting.", { status: 401 });
+
+    const supabase = supabaseAdmin;
     const cleanMessages = data.messages
       .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim())
       .slice(-24);
